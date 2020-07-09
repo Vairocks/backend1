@@ -6,6 +6,10 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var dishRouter = require('./routes/dishRouter');
+var promotionRouter = require('./routes/promotionRouter');
+var leaderRouter = require('./routes/leaderRouter');
+
 
 var app = express();
 
@@ -14,13 +18,16 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 app.use(logger('dev'));
-app.use(express.json());
+app.use(express.json());// now express does body parsing itself no need to download seperate body parser module
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/dishes', dishRouter);
+app.use('/promotions', promotionRouter);
+app.use('/leaders', leaderRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

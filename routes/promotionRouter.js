@@ -1,22 +1,35 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const Promos = require('../models/promotions');
 
 const promotionRouter = express.Router();
 promotionRouter.use(bodyParser.json());
 //notice promotion router has no ; so it is the obejct or .all .get .post .put .delete method below it
 promotionRouter.route('/') //this router will be mounted in index.js
-.all((req,res,next) => {
-    res.statusCode = 200;
-    res.setHeader('Contnet-Type','text/html');
-    next(); //pass on modiied req and res to next function below it i.e app.get below
-})
 
 .get((req,res,next) =>{
-    res.end('Will send all the promotions to you');
+    Promos.find({})
+        .then((promos) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(dishes);
+        },(err) => next(err))
+        .catch((err) => next(err));
+    
 } )
 
 .post((req,res,next) => {
-    res.end('Will add the promotion: '+ req.body.name + ' with details: '+ req.body.description);
+    console.log("Here I am",req.body);
+    Promos.create(req.body)
+        .then((promo) => {
+            console.log("Promotion created:", promo);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(promo);
+        },(err) => next(err))
+        .catch((err) => next(err));    
 })
 
 .put((req,res,next) => {
@@ -24,18 +37,26 @@ promotionRouter.route('/') //this router will be mounted in index.js
     res.end('Put operation not supported on promotions ');
 })
 .delete((req,res,next) =>{
-    res.end('Deleting all the promotions'); //dangerous operation
+    Promos.remove({})
+        .then((resp) =>{
+            res.statusCode =200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(resp);
+        },(err) => next(err))
+        .catch((err) => next(err));   
 } );
 
 promotionRouter.route('/:promotionId')
 
-.all((req,res,next) => {
-    res.statusCode = 200;
-    res.setHeader('Contnet-Type','text/html');
-    next(); //pass on modiied req and res to next function below it i.e app.get below
-})
 .get((req,res,next) =>{
-    res.end('Will send the promotion: ' +req.params.promotionId +' to you');
+    Promos.findById(req.params.promotionId)
+    .then((promo) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(promo);
+    },(err) => next(err))
+    .catch((err) => next(err));
+
 } )
 
 .post((req,res,next) => {
@@ -43,12 +64,28 @@ promotionRouter.route('/:promotionId')
 })
 
 .put((req,res,next) => {
-    res.statusCode = 403;
-    res.end('Updating the promotion: '+req.params.promotionId+'\n Will update the promotion: '+req.body.name+' with details: '+req.body.description);
+    Promos.findByIdAndUpdate(req.params.promotionId, {
+        $set: req.body
+    }, {new: true})
+    .then((promo) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(promo);
+    },(err) => next(err))
+    .catch((err) => next(err));
+
 })
 .delete((req,res,next) =>{
-    res.end('Deleting the promotion: '+req.params.promotionId); //dangerous operation
+    Promos.findByIdAndRemove(req.params.promotionId)
+    .then((resp) =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp);
+    },(err) => next(err))
+    .catch((err) => next(err));   
+
 } );
+
 
 
 module.exports =  promotionRouter;

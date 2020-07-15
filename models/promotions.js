@@ -3,38 +3,14 @@ const Schema = mongoose.Schema;
 require('mongoose-currency').loadType(mongoose);
 const Currency = mongoose.Types.Currency;
 
-const commentSchema = new Schema({
-    rating:{
-        type: Number,
-        min:1,
-        max:5,
-        default: 5
-    },
-    comment:{
-        type: String,
-        default: ''
-    },
-    author:{
-        type:String,
-        default: 'anonymous'
-    }
-});
 
-const dishSchema = new Schema({
+const promoSchema = new Schema({
     name: {
         type: String,
         required:true,
         unique: true
     },
-    description: {
-        type: String,
-        required: true
-    },
     image: {
-        type: String,
-        required: true
-    },
-    category: {
         type: String,
         required: true
     },
@@ -47,11 +23,10 @@ const dishSchema = new Schema({
         required : true,
         min: 0
     },
-    featured: {
-        type: Boolean,
-        default: false
-    },
-      comments:[commentSchema]
+    description: {
+        type: String,
+        required: true
+    }
  
 },  
 {
@@ -60,6 +35,6 @@ const dishSchema = new Schema({
 
 // module name = mongoose.model('modle_name',dishSchema_it_has_used);
 // here modle_name 'Dish' automatically pluralize to Dishes  
-var Dishes = mongoose.model('Dish', dishSchema);
+var Promos = mongoose.model('Promo', promoSchema);
 
-module.exports = Dishes;
+module.exports = Promos;

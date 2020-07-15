@@ -9,7 +9,17 @@ var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promotionRouter = require('./routes/promotionRouter');
 var leaderRouter = require('./routes/leaderRouter');
+const mongoose = require('mongoose');  //DBM strict schema
+mongoose.Promise= require('bluebird'); //Promise control
 
+const Dishes = require('./models/dishes');
+
+const url = 'mongodb://localhost:27017/conFusion';
+const connect= mongoose.connect(url, {useMongoClient: true});
+
+connect.then((db) => {
+  console.log("Connection ok to the server");
+}, (err) => {console.log(err);});
 
 var app = express();
 

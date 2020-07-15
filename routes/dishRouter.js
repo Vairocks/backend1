@@ -1,22 +1,35 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const Dishes = require('../models/dishes');
 
 const dishRouter = express.Router();
 dishRouter.use(bodyParser.json());
 //notice dish router has no ; so it is the obejct or .all .get .post .put .delete method below it
 dishRouter.route('/') //this router will be mounted in index.js
-.all((req,res,next) => {
-    res.statusCode = 200;
-    res.setHeader('Contnet-Type','text/html');
-    next(); //pass on modiied req and res to next function below it i.e app.get below
-})
 
 .get((req,res,next) =>{
-    res.end('Will send all the dishes to you');
+    Dishes.find({})
+        .then((dishes) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(dishes);
+        },(err) => next(err))
+        .catch((err) => next(err));
+    
 } )
 
 .post((req,res,next) => {
-    res.end('Will add the dish: '+ req.body.name + ' with details: '+ req.body.description);
+    console.log("Here I am",req.body.json);
+    Dishes.create(req.body)
+        .then((dish) => {
+            console.log("Dish created:", dish);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(dish);
+        },(err) => next(err))
+        .catch((err) => next(err));    
 })
 
 .put((req,res,next) => {
@@ -24,19 +37,26 @@ dishRouter.route('/') //this router will be mounted in index.js
     res.end('Put operation not supported on dishes ');
 })
 .delete((req,res,next) =>{
-    res.end('Deleting all the dishes'); //dangerous operation
+    Dishes.remove({})
+        .then((resp) =>{
+            res.statusCode =200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(resp);
+        },(err) => next(err))
+        .catch((err) => next(err));   
 } );
 
 dishRouter.route('/:dishId')
 
-
-.all((req,res,next) => {
-    res.statusCode = 200;
-    res.setHeader('Contnet-Type','text/html');
-    next(); //pass on modiied req and res to next function below it i.e app.get below
-})
 .get((req,res,next) =>{
-    res.end('Will send the dish: ' +req.params.dishId +' to you');
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+    },(err) => next(err))
+    .catch((err) => next(err));
+
 } )
 
 .post((req,res,next) => {
@@ -44,11 +64,26 @@ dishRouter.route('/:dishId')
 })
 
 .put((req,res,next) => {
-    res.statusCode = 403;
-    res.end('Updating the dish: '+req.params.dishId+'\n Will update the dish: '+req.body.name+' with details: '+req.body.description);
+    Dishes.findByIdAndUpdate(req.params.dishId, {
+        $set: req.body
+    }, {new: true})
+    .then((dish) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+    },(err) => next(err))
+    .catch((err) => next(err));
+
 })
 .delete((req,res,next) =>{
-    res.end('Deleting the dish: '+req.params.dishId); //dangerous operation
+    Dishes.findByIdAndRemove(req.params.dishId)
+    .then((resp) =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp);
+    },(err) => next(err))
+    .catch((err) => next(err));   
+
 } );
 
 

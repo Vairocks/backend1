@@ -30,15 +30,15 @@ app.set('view engine', 'jade');
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+app.use(bodyParser.urlencoded({extended: false}));
 //app.use(express.json());// now express does body parsing itself no need to download seperate body parser module
 //app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser('12345-6890-09876-54221'));
 
 function auth(req,res,next) {
- // console.log(req.headers);
+  console.log(req.signedCookies);
+
+if(!req.signedCookies.user) {
 
   var authHeader = req.headers.authorization;
 
@@ -54,6 +54,7 @@ function auth(req,res,next) {
   var password = auth[1];
 
   if(username == 'admin' && password == 'password'){
+    res.cookie('user','admin',{signed: true});
     next();
   }
   else{
@@ -62,6 +63,18 @@ function auth(req,res,next) {
     err.status =401;
     return next(err);
   }
+}  
+else{
+  if(req.signedCookies.user === 'admin') {
+    next();
+  }
+  else
+  {
+    var err = new Error("You are not authenticated");
+    err.status =401;
+    return next(err);
+  }
+}
 }
 
 app.use(auth);

@@ -29,12 +29,43 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 app.use(logger('dev'));
-//app.use(bodyParser.urlencoded({
-//  extended: true
-//}));
-app.use(express.json());// now express does body parsing itself no need to download seperate body parser module
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
+//app.use(express.json());// now express does body parsing itself no need to download seperate body parser module
 //app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+function auth(req,res,next) {
+ // console.log(req.headers);
+
+  var authHeader = req.headers.authorization;
+
+  if(!authHeader) {
+    var err = new Error("You are not authenticated");
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status =401;
+    return next(err);
+  }
+
+  var auth = new Buffer(authHeader.split(' ')[1],'base64').toString('utf-8').split(':');
+  var username = auth[0];
+  var password = auth[1];
+
+  if(username == 'admin' && password == 'password'){
+    next();
+  }
+  else{
+    var err = new Error("You are not authenticated");
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status =401;
+    return next(err);
+  }
+}
+
+app.use(auth);
+//use static data from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);

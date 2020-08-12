@@ -1,6 +1,8 @@
 var express = require('express');
 const bodyParser = require('body-parser');
 var User = require('../models/user');
+var passport= require('passport');
+var authenticate = require("../authenticate");
 
 var router = express.Router();
 router.use(bodyParser.json());
@@ -11,86 +13,46 @@ router.get('/', function(req, res, next) {
 });
 
 //notice leader router has no ; so it is the obejct or .all .get .post .put .delete method below it
-router.route('/signup')
-.post((req, res, next) => {
+router.post('/signup',(req, res, next) => {    /*************latest modification */
 
-  User.findOne({username: req.body.username})
-    .then((user) => {
-      if(user != null) {
-        var err = new Error('User' +req.body.username+ ' already exists');
-        err.status = 403;
-        next(err);
+  User.register(new User({username: req.body.username}),
+  req.body.password,(err,user) =>{
+      if(err) {
+        res.statusCode= 500;
+        res.setHeader('Content-Type','application/json');
+        res.json({err: err});  
       }
       else{
-        return User.create(
-          {username: req.body.username,
-           password: req.body.password
-          });
+          passport.authenticate('local')(req, res, () => {
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.json({ success: true, status: 'Registration Successful' });
+
+       });
       }
 
-    })
-    .then((user) => {
-      res.statusCode= 200;
-      res.setHeader('Content-Type','application/json');
-      res.json({status: 'Registration Successful', user:user})
-    },(err) => next(err))
-    .catch((err) => next(err));
+    });
 });
 //notice leader router has no ; so it is the obejct or .all .get .post .put .delete method below it
-router.route('/login')
-.post((req,res, next) => {
-  if(!req.session.user) {
-    
-      var authHeader = req.headers.authorization;
-    
-      if(!authHeader) {
-        var err = new Error("You are not authenticated");
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status =401;
-        return next(err);
-      }
-    
-      var auth = new Buffer(authHeader.split(' ')[1],'base64').toString('utf-8').split(':');
-      var username = auth[0];
-      var password = auth[1];
-     
-      User.findOne({username:username})
-      .then((user) => {
-        if (user === null) {
-          var err = new Error('User' + username+ 'does not exist');
-          res.setHeader('WWW-Authenticate', 'Basic');
-          err.status =401;
-          return next(err);
-        }
-        
-        else if (user.password !== password) {
-          var err = new Error("Your password is incorrect");
-          res.setHeader('WWW-Authenticate', 'Basic');
-          err.status =403;
-          return next(err); 
-        }
-        else if(user.username === username && user.password == password){
-          req.session.user = 'authenticated';
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'text/plain');
-          res.end('You are authenticated')
-        } 
-      }).catch((err)=> next(err));
-    }
-    else {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/plain');
-      res.end('You are already authenticated');
-    }
-})
-router.get('/logout', (req,res) => {
-  if(req.session){
-    req.session.destroy();//remove d session info
-    res.clearCookie('session-id');//destroying cookie on client side
-    res.redirect('/');
+router.post('/login',passport.authenticate('local'),(req,res) => {
+
+  var token = authenticate.getToken({_id: req.user._id});// similarly 3rd party token can be get via function
+  res.statusCode= 200;
+  res.setHeader('Content-Type','application/json');
+    res.json({ success: true, token: token, status: 'You are successfully logged in' });
+
+});
+
+
+router.get('/logout', (req,res,next) => {
+  if(authenticate.verifyUser){
+    console.log("I m in");
+    //req.session.destroy();//remove d session info
+    //res.clearCookie('session-id');//destroying cookie on client side
+  //  res.redirect('/');
   }
   else {
-    var err = new Error('You are not logged in!');
+    var err = new Error('You are not logged in hello!');
     err.status = 403;
     next(err);
   }

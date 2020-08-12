@@ -6,7 +6,9 @@ var logger = require('morgan'); //for http messages
 const bodyParser = require('body-parser');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
-
+var passport = require('passport');
+var authenticate = require('./authenticate');
+var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -15,12 +17,10 @@ var promotionRouter = require('./routes/promotionRouter');
 var leaderRouter = require('./routes/leaderRouter');
 const mongoose = require('mongoose');  //DBM strict schema
 mongoose.Promise= require('bluebird'); //Promise control
-
 const Dishes = require('./models/dishes');
 
-const url = 'mongodb://localhost:27017/conFusion';
+const url = config.mongoUrl;
 const connect= mongoose.connect(url, {useMongoClient: true});
-
 connect.then((db) => {
   console.log("Connection ok to the server");
 }, (err) => {console.log(err);});
@@ -37,42 +37,14 @@ app.use(bodyParser.urlencoded({extended: false}));
 //app.use(express.json());// now express does body parsing itself no need to download seperate body parser module
 //app.use(express.urlencoded({ extended: true }));
 //app.use(cookieParser('12345-6890-09876-54221'));
-app.use(session({
-  name: 'session-id',
-  secret: '12345-6890-09876-54221',
-  saveUninitialized: false,
-  resave: false,
-  store: new FileStore()
-}));
+
+app.use(passport.initialize());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth(req,res,next) {
-  console.log(req.session);
-
-if(!req.session.user) {
-    var err = new Error("You are not authenticated");
-    err.status =403;
-    return next(err);
-  }
-
-else{
-  if(req.session.user === 'authenticated') {
-    next();
-  }
-  else
-  {
-    var err = new Error("You are not authenticated");
-    err.status =403;
-    return next(err);
-  }
-}
-}
-
-app.use(auth);
 //use static data from public folder
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 app.use('/dishes', dishRouter);
 app.use('/promotions', promotionRouter);

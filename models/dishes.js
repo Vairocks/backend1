@@ -12,11 +12,12 @@ const commentSchema = new Schema({
     },
     comment:{
         type: String,
-        default: ''
+        required: true
     },
     author:{
-        type:String,
-        default: 'anonymous'
+        //type:mongoose.Schema.Types.ObjectId,
+        type: String,
+        ref: 'User'
     }
 });
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-
+const authenticate = require('../authenticate')
 const Dishes = require('../models/dishes');
 
 const dishRouter = express.Router();
@@ -20,7 +20,7 @@ dishRouter.route('/')
     
 } )
 
-.post((req,res,next) => {
+.post(authenticate.verifyUser, (req,res,next) => {
     console.log("Here I am",req.body);
     Dishes.create(req.body)
         .then((dish) => {
@@ -32,11 +32,11 @@ dishRouter.route('/')
         .catch((err) => next(err));    
 })
 
-.put((req,res,next) => {
+.put(authenticate.verifyUser,(req,res,next) => {
     res.statusCode = 403;
     res.end('Put operation not supported on dishes ');
 })
-.delete((req,res,next) =>{
+.delete(authenticate.verifyUser,(req,res,next) => {
     Dishes.remove({})
         .then((resp) =>{
             res.statusCode =200;
@@ -59,11 +59,11 @@ dishRouter.route('/:dishId')
 
 } )
 
-.post((req,res,next) => {
+.post(authenticate.verifyUser,(req,res,next) => {
     res.end('POST operation not supported on /dishes/:'+req.params.dishId);
 })
 
-.put((req,res,next) => {
+.put(authenticate.verifyUser,(req,res,next) => {
     Dishes.findByIdAndUpdate(req.params.dishId, {
         $set: req.body
     }, {new: true})
@@ -75,7 +75,7 @@ dishRouter.route('/:dishId')
     .catch((err) => next(err));
 
 })
-.delete((req,res,next) =>{
+.delete(authenticate.verifyUser,(req,res,next) =>{
     Dishes.findByIdAndRemove(req.params.dishId)
     .then((resp) =>{
         res.statusCode =200;
@@ -106,11 +106,12 @@ dishRouter.route('/:dishId/comments')
     
 } )
 
-.post((req,res,next) => {
-    console.log("Here I am",req.body);
+.post(authenticate.verifyUser,(req,res,next) => {
+  //  console.log("Here I am",req.body);
     Dishes.findById(req.params.dishId)
-        .then((dish) => {
+            .then((dish) => {
             if(dish!=null){
+//                req.body.author = req.user._id;// the client side isn't sending author name any more to the server. The server by itself should be able to find the author by looking into user id of comment sender, this code is just to display the sender the info he posted
                 dish.comments.push(req.body);
                 dish.save()
                     .then((dish)=>{
@@ -128,16 +129,16 @@ dishRouter.route('/:dishId/comments')
         .catch((err) => next(err));    
 })
 
-.put((req,res,next) => {
+.put(authenticate.verifyUser,(req,res,next) => {
     res.statusCode = 403;
     res.end('Put operation not supported on dishes/ ' 
             +req.params.dishId +"/comments");
 })
-.delete((req,res,next) =>{
+.delete(authenticate.verifyUser,(req,res,next) =>{
     Dishes.findById(req.params.dishID)
         .then((dish) =>{
             if(dish!=null){
-                for(var i =(dish,comments.lenth-1); i>=0;i--)
+                for(var i =(dish,comments.length-1); i>=0;i--)
                 {
                     dish.comments.id(dish.comments[i]._id).remove();
                     
@@ -183,11 +184,11 @@ dishRouter.route('/:dishId/comments/:commentId')
 
 } )
 
-.post((req,res,next) => {
+.post(authenticate.verifyUser,(req,res,next) => {
     res.end('POST operation not supported on /dishes/:'+req.params.dishId+ "/comments"+req.params.commentId);
 })
 
-.put((req,res,next) => {
+.put(authenticate.verifyUser,(req,res,next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if(dish!=null && dish.comments.id(req.params.commentId) != null){
@@ -218,7 +219,7 @@ dishRouter.route('/:dishId/comments/:commentId')
     .catch((err) => next(err)); 
 
 })
-.delete((req,res,next) =>{
+.delete(authenticate.verifyUser,(req,res,next) =>{
     Dishes.findById(req.params.dishID)
     .then((dish) =>{
         console.log(dish);

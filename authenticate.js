@@ -6,6 +6,7 @@ var ExtractJwt = require('passport-jwt').ExtractJwt;
 var jwt = require('jsonwebtoken');
 
 var config = require("./config");
+const { authenticate } = require('passport');
 
 exports.local = passport.use(new LocalStrategy(User.authenticate()));//given by passport local
 passport.serializeUser(User.serializeUser());
@@ -31,4 +32,6 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
     }));
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+
 

@@ -8,6 +8,11 @@ const { populate } = require('../models/dishes');
 const dishRouter = express.Router();
 dishRouter.use(bodyParser.json());
 //notice dish router has no ; so it is the obejct or .all .get .post .put .delete method below it
+
+
+
+
+
 dishRouter.route('/') 
 
 .get((req,res,next) =>{
@@ -79,6 +84,11 @@ dishRouter.route('/:dishId')
 
 })
 .delete(authenticate.verifyUser,(req,res,next) =>{
+    if(!req.user.admin){
+        err = new Error('You are not authorized to delete');
+        err.status=404;
+        return(next(err));
+    }
     Dishes.findByIdAndRemove(req.params.dishId)
     .then((resp) =>{
         res.statusCode =200;
@@ -251,6 +261,8 @@ dishRouter.route('/:dishId/comments/:commentId')
     .catch((err) => next(err));   
 
 } );
+
+
 
 
 module.exports =  dishRouter;

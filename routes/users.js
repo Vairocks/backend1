@@ -3,17 +3,18 @@ const bodyParser = require('body-parser');
 var User = require('../models/user');
 var passport= require('passport');
 var authenticate = require("../authenticate");
-
+var cors = require('./cors');
 var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
+router.options('*', cors.corsWithOptions, (req,res) => {res.sendStatus(200);})
+router.get('/',cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin, function(req, res, next) {
   res.send('respond with a resource');
 });
 
 //notice leader router has no ; so it is the obejct or .all .get .post .put .delete method below it
-router.post('/signup',(req, res, next) => {    /*************latest modification */
+router.post('/signup',cors.corsWithOptions,(req, res, next) => {    /*************latest modification */
 
   User.register(new User({username: req.body.username}),
   req.body.password,(err,user) =>{
@@ -49,13 +50,31 @@ router.post('/signup',(req, res, next) => {    /*************latest modification
 
 
 //notice leader router has no ; so it is the obejct or .all .get .post .put .delete method below it
-router.post('/login',passport.authenticate('local'),(req,res) => {
+router.post('/login',cors.corsWithOptions,(req,res,next) => {
 
-  var token = authenticate.getToken({_id: req.user._id});// similarly 3rd party token can be get via function
-  res.statusCode= 200;
-  res.setHeader('Content-Type','application/json');
-    res.json({ success: true, token: token, status: 'You are successfully logged in' });
+  passport.authenticate('local',(err,user,info) => {
+    if(err)
+      return next(err);
 
+    if(!user){
+      res.statusCode= 401;
+      res.setHeader('Content-Type','application/json');
+      res.json({ success: false, status: 'Login Unsuccessful!', err:info });
+     
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        res.statusCode= 401;
+        res.setHeader('Content-Type','application/json');
+        res.json({ success: false, status: 'Login Unsuccessful!', err:'Could not log in user' }); 
+      }
+    
+      var token = authenticate.getToken({_id: req.user._id});// similarly 3rd party token can be get via function
+      res.statusCode= 200;
+      res.setHeader('Content-Type','application/json');
+      res.json({ success: true, token: token, status: 'Login successful' });
+    });
+  }) (req, res, next);  
 });
 
 
@@ -71,6 +90,36 @@ router.get('/logout', (req,res,next) => {
     err.status = 403;
     next(err);
   }
-}); 
+ }); 
+
+router.get('/facebook/token',passport.authenticate
+('facebook-token'), (req,res) => {
+  if (req.user) {
+    var token = authenticate.getToken({_id: req.user._id});
+    res.statusCode= 200;
+    res.setHeader('Content-Type','application/json');
+    res.json({ success: true, token: token, status: 'You are successfully logged in' });
+    
+  }
+});
+
+//At reular interval the client will visit this route to check if his jwt expired
+router.get('/checkJWTToken', cors.corsWithOptions, (req,res) => {
+  passport.authenticate('jwt',{session: false}, (err, user, info) => {
+   if(err)
+   return next(err);
+   
+   if(!user){
+    res.statusCode = 401;
+    res.setHeader('Content-Type', 'application/json');
+    return res.json({status: 'JWT invalid!', success: false, err:info});
+   }
+   else {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.json({status: 'JWT valid!', success: true, user:user});   
+   }
+  }) (req, res);
+})
 
 module.exports = router;
